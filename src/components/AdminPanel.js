@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Button,
   Form,
@@ -9,18 +9,51 @@ import lockOpened from '../images/lockOpened.png';
 import basket from '../images/basket.png';
 import broom from '../images/broom.png';
 import arrow from '../images/arrow.png';
+import { getUsers } from '../api/client';
 
 const AdminPanel = () => {
-  const [users, setUsers] = useState([
-    { id: 1, name: 'Clare, Alex', email: 'a_clare42@gmail.com', status: 'Active', lastSeen: '5 minutes ago', position: 'N/A' },
-    { id: 2, name: 'Morrison, Jim', email: 'dmtimer9@dealyaari.com', status: 'Active', lastSeen: 'less than a minute ago', position: 'CFO, Meta Platforms, Inc.' },
-    { id: 3, name: 'Simone, Nina', email: 'marishabelin@giftcode-ao.com', status: 'Blocked', lastSeen: '3 weeks ago', position: 'Regional Manager, Amazon.com, Inc.' },
-    { id: 4, name: 'Zappa, Frank', email: 'zappa_f@citybank.com', status: 'Unverified', lastSeen: 'less than a minute ago', position: 'Architect, Meta Platforms, Inc.' },
-  ]);
-
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filterText, setFilterText] = useState('');
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [sortField, setSortField] = useState('email');
+  const [sortOrder, setSortOrder] = useState('asc');
 
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        const data = await getUsers(
+          filterText ? `%${filterText}%` : '',
+          sortField,    
+          sortOrder    
+        );
+        setUsers(data);
+        setError(null);
+      } catch (err) {
+        setError('Не удалось загрузить пользователей');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      loadUsers();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [filterText, sortField, sortOrder]); 
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
@@ -40,6 +73,16 @@ const AdminPanel = () => {
 
   const isAllSelected = users.length > 0 && selectedUsers.length === users.length;
   const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < users.length;
+
+
+  if (loading) {
+    return <div className="text-center p-5">Загрузка пользователей...</div>;
+  }
+
+
+  if (error) {
+    return <div className="text-center p-5 text-danger">{error}</div>;
+  }
 
   return (
     <div>
@@ -98,7 +141,7 @@ const AdminPanel = () => {
               disabled={selectedUsers.length !== 1}
               onClick={() => {
                 const userToEdit = users.find(user => user.id === selectedUsers[0]);
-                alert(`Editing: ${userToEdit.name}`);
+                alert(`Editing: ${userToEdit.username}`);
               }}
               title="Edit selected user"
             >
@@ -111,16 +154,42 @@ const AdminPanel = () => {
             </Button>
           </div>
 
-          <Form className="d-inline-flex">
-            <Form.Control
-              type="text"
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              placeholder="Filter"
-              className="border border-secondary rounded px-3 py-1 bg-white text-dark"
-              style={{ width: '200px' }}
-            />
-          </Form>
+          <div className="d-flex align-items-center gap-3">
+            <Form className="d-inline-flex">
+              <Form.Control
+                type="text"
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                placeholder="Filter"
+                className="border border-secondary rounded px-3 py-1 bg-white text-dark"
+                style={{ width: '200px' }}
+                autoFocus
+              />
+            </Form>
+            <Button
+              variant="outline-danger"
+              className="px-3 py-2 d-flex align-items-center gap-2"
+              onClick={() => console.log('Log Out clicked')}
+              title="Log Out"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Log Out
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -139,7 +208,17 @@ const AdminPanel = () => {
                 onChange={handleSelectAll}
               />
             </th>
-            <th>Name</th>
+            <th>Name <img
+              src={arrow}
+              alt="Arrow"
+              width="16"
+              height="16"
+              onClick={() => handleSort('username')}
+              style={{
+                cursor: 'pointer',
+                transform: sortField === 'email' && sortOrder === 'desc' ? 'rotate(180deg)' : 'none'
+              }}
+            /></th>
             <th className="d-flex align-items-center gap-1">
               Email
               <img
@@ -147,10 +226,40 @@ const AdminPanel = () => {
                 alt="Arrow"
                 width="16"
                 height="16"
+                onClick={() => handleSort('email')} 
+                style={{
+                  cursor: 'pointer',
+                  transform: sortField === 'email' && sortOrder === 'desc' ? 'rotate(180deg)' : 'none'
+                }}
               />
             </th>
-            <th>Status</th>
-            <th>Last seen</th>
+            <th>Status
+              <img
+                src={arrow}
+                alt="Arrow"
+                width="16"
+                height="16"
+                onClick={() => handleSort('status')} 
+                style={{
+                  cursor: 'pointer',
+                  transform: sortField === 'email' && sortOrder === 'desc' ? 'rotate(180deg)' : 'none'
+                }}
+              />
+            </th>
+            <th>Last seen
+              <img
+                src={arrow}
+                alt="Arrow"
+                width="16"
+                height="16"
+                onClick={() => handleSort('last_login')} 
+                style={{
+                  cursor: 'pointer',
+                  transform: sortField === 'email' && sortOrder === 'desc' ? 'rotate(180deg)' : 'none'
+                }}
+
+              />
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -164,12 +273,12 @@ const AdminPanel = () => {
                 />
               </td>
               <td>
-                <strong>{user.name}</strong>
-                <small className="text-muted d-block mt-1">{user.position}</small>
+                <strong>{user.username}</strong>
+                <small className="text-muted d-block mt-1">{user.position || 'N/A'}</small>
               </td>
               <td>{user.email}</td>
               <td>{user.status}</td>
-              <td>{user.lastSeen}</td>
+              <td>{user.last_login || 'unknown'}</td>
             </tr>
           ))}
         </tbody>

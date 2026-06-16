@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register'; 
 import ForgotPassword from './components/ForgotPassword';
 import AdminPanel from './components/AdminPanel';
+import { checkServerConnection } from './api/client';
 
 function App() {
+  useEffect(() => {
+    checkServerConnection();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

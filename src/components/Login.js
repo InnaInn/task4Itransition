@@ -6,20 +6,43 @@ import {
   Form,
   Button,
   FloatingLabel,
+  Alert,
 } from 'react-bootstrap';
 import backgroundImage from '../images/background.png';
 import logoImage from '../images/logo.png';
 import eyeImage from '../images/eye.png';
 import envelopeImage from '../images/envelope.png';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login:', email, password);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:5000/api/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        navigate('/admin-panel');
+      } else {
+        setError('Please check your email or password');
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+      setError('Ошибка подключения к серверу');
+    }
   };
 
   return (
@@ -50,6 +73,12 @@ const Login = () => {
               <p className="text-muted mb-2">Start your journey</p>
               <h4 className="mb-4">Sign In to The App</h4>
 
+              {error && (
+                <Alert variant="danger" className="mb-3">
+                  {error}
+                </Alert>
+              )}
+
               <Form onSubmit={handleSubmit}>
                 <div style={{ position: 'relative' }} className="mb-3">
                   <FloatingLabel label="E-mail">
@@ -77,10 +106,11 @@ const Login = () => {
                     />
                   </div>
                 </div>
+
                 <div style={{ position: 'relative' }} className="mb-3">
                   <FloatingLabel label="Password">
                     <Form.Control
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password"
@@ -92,8 +122,9 @@ const Login = () => {
                       right: '12px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      pointerEvents: 'none',
+                      cursor: 'pointer',  
                     }}
+                    onClick={() => setShowPassword(!showPassword)} 
                   >
                     <img src={eyeImage} alt="password" width="20" height="20" />
                   </div>
@@ -121,7 +152,7 @@ const Login = () => {
             </div>
             <div>
               <Link to="/forgot-password" className="text-primary">Forgot password?</Link>
-               <Link to="/admin-panel" className="text-primary">Админ панель</Link>
+              <Link to="/admin-panel" className="text-primary">Админ панель</Link>
             </div>
           </div>
         </Col>
