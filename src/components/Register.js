@@ -20,15 +20,44 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState(null);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Register:', { name, email, password });
-    setMessage({ text: 'Registration successful! Please check your email to verify.', variant: 'success' });
-    setTimeout(() => {
-      navigate('/login');
-    }, 2000);
+    setError('');
+    setMessage(null);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: name,
+          email: email,
+          password: password
+        }),
+      });
+
+      if (response.ok) {
+        setMessage({
+          text: 'Registration successful! Please check your email to verify.',
+          variant: 'success'
+        });
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else if (response.status === 409) {
+        setError('User already exists');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+      setError('Connection error. Please try again.');
+    }
   };
 
   return (
@@ -59,7 +88,17 @@ const Register = () => {
               <p className="text-muted mb-2">Start your journey</p>
               <h4 className="mb-4">Create an Account</h4>
 
-              {message && <Alert variant={message.variant}>{message.text}</Alert>}
+              {error && (
+                <Alert variant="danger" className="mb-3">
+                  {error}
+                </Alert>
+              )}
+
+              {message && (
+                <Alert variant={message.variant} className="mb-3">
+                  {message.text}
+                </Alert>
+              )}
 
               <Form onSubmit={handleSubmit}>
                 <FloatingLabel label="Name" className="mb-3">

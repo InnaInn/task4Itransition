@@ -1,20 +1,48 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import backgroundImage from '../images/background.png';
 import logoImage from '../images/logo.png';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage({
-      text: `If an account exists for ${email}, you will receive a password reset link.`,
-      variant: 'success',
-    });
-    setTimeout(() => setMessage(null), 5000);
+    setError('');
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/users/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        setMessage({
+          text: `If an account exists for ${email}, you will receive a password reset link.`,
+          variant: 'success',
+        });
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
+    } catch (error) {
+      console.error('Ошибка:', error);
+      setError('Connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,7 +70,17 @@ const ForgotPassword = () => {
                 Enter your email and we'll send you a link to reset your password.
               </p>
 
-              {message && <Alert variant={message.variant}>{message.text}</Alert>}
+              {error && (
+                <Alert variant="danger" className="mb-3">
+                  {error}
+                </Alert>
+              )}
+
+              {message && (
+                <Alert variant={message.variant} className="mb-3">
+                  {message.text}
+                </Alert>
+              )}
 
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
@@ -52,11 +90,12 @@ const ForgotPassword = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={loading}
                   />
                 </Form.Group>
 
-                <Button variant="primary" type="submit" className="w-100 mb-3">
-                  Send Reset Link
+                <Button variant="primary" type="submit" className="w-100 mb-3" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
 
                 <div className="text-center">
