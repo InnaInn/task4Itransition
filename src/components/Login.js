@@ -32,6 +32,7 @@ const Login = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -152,7 +153,6 @@ const Login = () => {
             </div>
             <div>
               <Link to="/forgot-password" className="text-primary">Forgot password?</Link>
-              <Link to="/admin-panel" className="text-primary">Админ панель</Link>
             </div>
           </div>
         </Col>

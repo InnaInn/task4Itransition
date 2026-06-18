@@ -1,8 +1,16 @@
 const API_URL = 'http://localhost:5000/api';
 
+function checkAuthorization(response) {
+    if (response.status === 401) {
+        throw {name : 'NotAuthorized', message : 'User is not authorized to perform request'}; 
+    };
+}
+
 export const checkServerConnection = async () => {
   try {
-    const response = await fetch(`${API_URL}/health`);
+    const response = await fetch(`${API_URL}/health`, {
+      credentials: 'include'
+    });
     const data = await response.json();
     console.log('Сервер работает:', data);
     return data;
@@ -21,7 +29,10 @@ export const getUsers = async (email, sortField, sortOrder) => {
     url.searchParams.set(`sort[${sortField}]`, sortOrder);
     url.searchParams.set('page[number]', '1');
     url.searchParams.set('page[size]', '100');
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
+    checkAuthorization(response);
     const data = await response.json();
     console.log('Пользователи из БД:', data);
     return data.data || []; 
@@ -30,4 +41,3 @@ export const getUsers = async (email, sortField, sortOrder) => {
     throw error;
   }
 };
-

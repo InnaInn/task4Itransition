@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Button,
   Form,
@@ -14,8 +15,10 @@ import arrow from '../images/arrow.png';
 import { getUsers } from '../api/client';
 
 const AdminPanel = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  //const [checkingAuth, setCheckingAuth] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [filterText, setFilterText] = useState('');
@@ -31,7 +34,6 @@ const AdminPanel = () => {
   const [showEditDeleteConfirm, setShowEditDeleteConfirm] = useState(false);
   const [usersToEditDelete, setUsersToEditDelete] = useState([]);
 
-
   const getDisplayStatus = (status) => {
     switch (status) {
       case 'ACTIVE':
@@ -46,6 +48,18 @@ const AdminPanel = () => {
     }
   };
 
+  function redirectUnauthorized(error) {
+    if (error.name === 'NotAuthorized') {
+      navigate('/login');
+    }
+  }
+
+  function checkUnauthorized(response) {
+    if (response.status === 401) {
+      navigate('/login');
+    };
+  }
+
   useEffect(() => {
     const loadUsers = async () => {
       try {
@@ -58,6 +72,7 @@ const AdminPanel = () => {
         setUsers(data);
         setError(null);
       } catch (err) {
+        redirectUnauthorized(err);
         setError('Не удалось загрузить пользователей');
         console.error(err);
       } finally {
@@ -81,6 +96,26 @@ const AdminPanel = () => {
     }
   };
 
+  const getSortIcon = (field) => {
+    const isActive = sortField === field;
+
+    return (
+      <img
+        src={arrow}
+        alt="sort"
+        width="12"
+        height="12"
+        style={{
+          marginLeft: '5px',
+          transform: isActive && sortOrder === 'desc' ? 'rotate(180deg)' : 'rotate(0deg)',
+          filter: isActive ? 'brightness(0) saturate(100%)' : 'none',
+          opacity: isActive ? 1 : 0.4,
+          transition: 'transform 0.3s, filter 0.3s'
+        }}
+      />
+    );
+  };
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
       setSelectedUsers(users.map(user => user.id));
@@ -101,6 +136,21 @@ const AdminPanel = () => {
     if (selectedUsers.length === 0) return;
     setBlockAction(action);
     setShowBlockConfirm(true);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/logout', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error('Ошибка выхода:', error);
+    }
   };
 
   const confirmBlock = async () => {
@@ -132,6 +182,10 @@ const AdminPanel = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ status: newStatus }),
+          credentials: 'include',
+        }).then(response => {
+          checkUnauthorized(response);
+          return response;
         })
       );
 
@@ -176,6 +230,10 @@ const AdminPanel = () => {
       const deletePromises = usersToDelete.map(userId =>
         fetch(`http://localhost:5000/api/users/${userId}`, {
           method: 'DELETE',
+          credentials: 'include',
+        }).then(response => {
+          checkUnauthorized(response);
+          return response;
         })
       );
 
@@ -219,7 +277,6 @@ const AdminPanel = () => {
     setShowEditDeleteConfirm(true);
   };
 
-
   const confirmEditDelete = async () => {
     setShowEditDeleteConfirm(false);
     setDeleting(true);
@@ -230,6 +287,10 @@ const AdminPanel = () => {
       const deletePromises = usersToEditDelete.map(user =>
         fetch(`http://localhost:5000/api/users/${user.id}`, {
           method: 'DELETE',
+          credentials: 'include',
+        }).then(response => {
+          checkUnauthorized(response);
+          return response;
         })
       );
 
@@ -337,12 +398,7 @@ const AdminPanel = () => {
               onClick={() => handleBlockClick('block')}
               title="Block selected users"
             >
-              <img
-                src={lockClosed}
-                alt="Block"
-                width="20"
-                height="20"
-              />
+              <img src={lockClosed} alt="Block" width="20" height="20" />
               Block
             </Button>
             <Button
@@ -352,12 +408,7 @@ const AdminPanel = () => {
               onClick={() => handleBlockClick('unblock')}
               title="Unlock selected users"
             >
-              <img
-                src={lockOpened}
-                alt="Unlock"
-                width="20"
-                height="20"
-              />
+              <img src={lockOpened} alt="Unlock" width="20" height="20" />
             </Button>
             <Button
               variant="outline-danger"
@@ -366,12 +417,7 @@ const AdminPanel = () => {
               onClick={handleDeleteClick}
               title="Delete selected users"
             >
-              <img
-                src={basket}
-                alt="Delete"
-                width="20"
-                height="20"
-              />
+              <img src={basket} alt="Delete" width="20" height="20" />
             </Button>
             <Button
               variant="outline-danger"
@@ -380,12 +426,7 @@ const AdminPanel = () => {
               onClick={handleEditDeleteClick}
               title="Delete users with UNVERIFIED or BLOCKED_UNVERIFIED status"
             >
-              <img
-                src={broom}
-                alt="Edit"
-                width="20"
-                height="20"
-              />
+              <img src={broom} alt="Edit" width="20" height="20" />
             </Button>
           </div>
 
@@ -404,7 +445,7 @@ const AdminPanel = () => {
             <Button
               variant="outline-danger"
               className="px-3 py-2 d-flex align-items-center gap-2"
-              onClick={() => console.log('Log Out clicked')}
+              onClick={handleLogout}
               title="Log Out"
             >
               <svg
@@ -454,10 +495,18 @@ const AdminPanel = () => {
                 onChange={handleSelectAll}
               />
             </th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Last seen</th>
+            <th onClick={() => handleSort('username')} style={{ cursor: 'pointer' }}>
+              Name {getSortIcon('username')}
+            </th>
+            <th onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
+              Email {getSortIcon('email')}
+            </th>
+            <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+              Status {getSortIcon('status')}
+            </th>
+            <th onClick={() => handleSort('last_login')} style={{ cursor: 'pointer' }}>
+              Last seen {getSortIcon('last_login')}
+            </th>
           </tr>
         </thead>
         <tbody>

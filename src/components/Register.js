@@ -19,6 +19,7 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -137,7 +138,7 @@ const Register = () => {
                 <div style={{ position: 'relative' }} className="mb-3">
                   <FloatingLabel label="Password">
                     <Form.Control
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password"
@@ -150,8 +151,9 @@ const Register = () => {
                       right: '12px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      pointerEvents: 'none',
+                      cursor: 'pointer',
                     }}
+                    onClick={() => setShowPassword(!showPassword)}
                   >
                     <img src={eyeImage} alt="password" width="20" height="20" />
                   </div>
