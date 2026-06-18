@@ -185,7 +185,9 @@ const Register = () => {
               right: 0,
               bottom: 0,
               left: 'auto',
+              display: 'block'
             }}
+            className="d-none d-md-block"
           />
         </Col>
       </Row>

@@ -18,7 +18,6 @@ const AdminPanel = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  //const [checkingAuth, setCheckingAuth] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [filterText, setFilterText] = useState('');
