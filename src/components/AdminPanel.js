@@ -13,6 +13,9 @@ import basket from '../images/basket.png';
 import broom from '../images/broom.png';
 import arrow from '../images/arrow.png';
 import { getUsers } from '../api/client';
+import { config } from "../config.js";
+
+const beURL = config.beURL;
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -139,7 +142,7 @@ const AdminPanel = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('http://localhost:5000/logout', {
+      const response = await fetch(`${beURL}/logout`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -175,7 +178,7 @@ const AdminPanel = () => {
 
     try {
       const updatePromises = selectedUsers.map(userId =>
-        fetch(`http://localhost:5000/api/users/${userId}`, {
+        fetch(`${beURL}/api/users/${userId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -227,7 +230,7 @@ const AdminPanel = () => {
 
     try {
       const deletePromises = usersToDelete.map(userId =>
-        fetch(`http://localhost:5000/api/users/${userId}`, {
+        fetch(`${beURL}/api/users/${userId}`, {
           method: 'DELETE',
           credentials: 'include',
         }).then(response => {
@@ -284,7 +287,7 @@ const AdminPanel = () => {
 
     try {
       const deletePromises = usersToEditDelete.map(user =>
-        fetch(`http://localhost:5000/api/users/${user.id}`, {
+        fetch(`${beURL}/api/users/${user.id}`, {
           method: 'DELETE',
           credentials: 'include',
         }).then(response => {

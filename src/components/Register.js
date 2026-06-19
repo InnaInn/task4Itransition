@@ -15,6 +15,10 @@ import logoImage from '../images/logo.png';
 import eyeImage from '../images/eye.png';
 import envelopeImage from '../images/envelope.png';
 
+import { config } from "../config.js";
+
+const beURL = config.beURL;
+
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,7 +34,7 @@ const Register = () => {
     setMessage(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${beURL}/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

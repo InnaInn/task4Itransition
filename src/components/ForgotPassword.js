@@ -3,6 +3,9 @@ import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import backgroundImage from '../images/background.png';
 import logoImage from '../images/logo.png';
+import { config } from "../config.js";
+
+const beURL = config.beURL;
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -18,7 +21,7 @@ const ForgotPassword = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/reset-password', {
+      const response = await fetch(`${beURL}/api/users/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

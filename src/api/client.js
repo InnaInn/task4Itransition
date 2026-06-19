@@ -1,4 +1,7 @@
-const API_URL = 'http://localhost:5000/api';
+import { config } from "../config.js";
+const beURL = config.beURL;
+
+const API_URL = `${beURL}/api`;
 
 function checkAuthorization(response) {
     if (response.status === 401) {

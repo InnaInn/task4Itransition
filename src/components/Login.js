@@ -13,6 +13,9 @@ import logoImage from '../images/logo.png';
 import eyeImage from '../images/eye.png';
 import envelopeImage from '../images/envelope.png';
 import { Link, useNavigate } from 'react-router-dom';
+import { config } from "../config.js";
+
+const beURL = config.beURL;
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -26,7 +29,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/login', {
+      const response = await fetch(`${beURL}/api/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
