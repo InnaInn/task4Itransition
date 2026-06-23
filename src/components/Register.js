@@ -1,3 +1,4 @@
+// Register.js
 import React, { useState } from 'react';
 import {
   Container,
@@ -14,7 +15,7 @@ import backgroundImage from '../images/background.png';
 import logoImage from '../images/logo.png';
 import eyeImage from '../images/eye.png';
 import envelopeImage from '../images/envelope.png';
-
+import VerificationModal from './VerificationModal';
 import { config } from "../config.js";
 
 const beURL = config.beURL;
@@ -26,6 +27,10 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState(null);
   const [error, setError] = useState('');
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -47,13 +52,9 @@ const Register = () => {
       });
 
       if (response.ok) {
-        setMessage({
-          text: 'Registration successful! Please check your email to verify.',
-          variant: 'success'
-        });
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+        const data = await response.json();
+        setUserId(data.id);
+        setShowVerificationModal(true);
       } else if (response.status === 409) {
         setError('User already exists');
       } else {
@@ -63,6 +64,48 @@ const Register = () => {
       console.error('Ошибка:', error);
       setError('Connection error. Please try again.');
     }
+  };
+
+  const handleVerify = async (userId) => {
+    setVerifying(true);
+    setVerifyError('');
+
+    try {
+      const response = await fetch(`${beURL}/api/users/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (response.ok) {
+        setShowVerificationModal(false);
+        setMessage({
+          text: 'Email verified successfully! You can now log in.',
+          variant: 'success'
+        });
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else {
+        const data = await response.json();
+        setVerifyError(data.message || 'Verification failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      setVerifyError('Connection error. Please try again.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowVerificationModal(false);
+    setMessage({
+      text: 'Please verify your email to complete registration. You can also try to log in after verification.',
+      variant: 'info'
+    });
   };
 
   return (
@@ -195,6 +238,15 @@ const Register = () => {
           />
         </Col>
       </Row>
+
+      <VerificationModal
+        show={showVerificationModal}
+        onHide={handleCloseModal}
+        onVerify={handleVerify}
+        userId={userId}
+        loading={verifying}
+        error={verifyError}
+      />
     </Container>
   );
 };

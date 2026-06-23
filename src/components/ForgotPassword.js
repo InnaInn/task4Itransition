@@ -12,6 +12,7 @@ const ForgotPassword = () => {
   const [message, setMessage] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -19,6 +20,7 @@ const ForgotPassword = () => {
     setError('');
     setMessage(null);
     setLoading(true);
+    setNewPassword('');
 
     try {
       const response = await fetch(`${beURL}/api/users/reset-password`, {
@@ -30,15 +32,15 @@ const ForgotPassword = () => {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        setNewPassword(data.newPassword);
         setMessage({
-          text: `If an account exists for ${email}, you will receive a password reset link.`,
+          text: `Your new password is: ${data.newPassword}. Please save it and use it to log in.`,
           variant: 'success',
         });
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
       } else {
-        setError('Something went wrong. Please try again.');
+        const data = await response.json();
+        setError(data.message || 'Something went wrong. Please try again.');
       }
     } catch (error) {
       console.error('Ошибка:', error);
@@ -70,7 +72,7 @@ const ForgotPassword = () => {
             <div style={{ width: '100%', maxWidth: '400px' }}>
               <h4 className="mb-3">Forgot Password?</h4>
               <p className="text-muted mb-4">
-                Enter your email and we'll send you a link to reset your password.
+                Enter your email and we'll generate a new password for you.
               </p>
 
               {error && (
@@ -98,7 +100,7 @@ const ForgotPassword = () => {
                 </Form.Group>
 
                 <Button variant="primary" type="submit" className="w-100 mb-3" disabled={loading}>
-                  {loading ? 'Sending...' : 'Send Reset Link'}
+                  {loading ? 'Generating...' : 'Reset Password'}
                 </Button>
 
                 <div className="text-center">
