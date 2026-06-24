@@ -12,7 +12,7 @@ import lockOpened from '../images/lockOpened.png';
 import basket from '../images/basket.png';
 import broom from '../images/broom.png';
 import arrow from '../images/arrow.png';
-import { getUsers, deleteUser, updateUserStatus, logoutUser } from '../api/client';
+import { getUsers, deleteUser, updateUserStatus, logoutUser, getCurrentUser } from '../api/client';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -32,6 +32,9 @@ const AdminPanel = () => {
   const [blockAction, setBlockAction] = useState('');
   const [showEditDeleteConfirm, setShowEditDeleteConfirm] = useState(false);
   const [usersToEditDelete, setUsersToEditDelete] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null); 
+  const [loadingUser, setLoadingUser] = useState(true); 
+
 
   const getDisplayStatus = (status) => {
     switch (status) {
@@ -52,6 +55,25 @@ const AdminPanel = () => {
       navigate('/login');
     }
   }
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        setLoadingUser(true);
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (err) {
+        if (err.name === 'NotAuthorized') {
+          navigate('/login');
+        }
+        console.error('Failed to load current user:', err);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    loadCurrentUser();
+  }, [navigate]);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -279,7 +301,7 @@ const AdminPanel = () => {
   const isIndeterminate = selectedUsers.length > 0 && selectedUsers.length < users.length;
 
   if (loading) {
-    return <div className="text-center p-5">Загрузка пользователей...</div>;
+    return <div className="text-center p-5">Loading users...</div>;
   }
 
   return (
@@ -385,6 +407,12 @@ const AdminPanel = () => {
             >
               <img src={broom} alt="Edit" width="20" height="20" />
             </Button>
+           <p className="mb-0 ms-2 d-flex align-items-center">
+              Logged in as: 
+              <strong className="ms-1">
+                {loadingUser ? 'Loading...' : currentUser?.username || 'Unknown'}
+              </strong>
+            </p>
           </div>
 
           <div className="d-flex align-items-center gap-3">

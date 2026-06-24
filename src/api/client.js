@@ -147,3 +147,15 @@ export const updateUserStatus = async (userId, status) => {
         throw error;
     }
 };
+
+export const getCurrentUser = async () => {
+    try {
+        const response = await fetchWithSession(`${API_URL}/users/me`);
+        checkAuthorization(response);
+        const data = await response.json();
+        return data.data; 
+    } catch (error) {
+        console.error('Ошибка загрузки текущего пользователя:', error);
+        throw error;
+    }
+};
