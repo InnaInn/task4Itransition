@@ -12,10 +12,7 @@ import lockOpened from '../images/lockOpened.png';
 import basket from '../images/basket.png';
 import broom from '../images/broom.png';
 import arrow from '../images/arrow.png';
-import { getUsers } from '../api/client';
-import { config } from "../config.js";
-
-const beURL = config.beURL;
+import { getUsers, deleteUser, updateUserStatus, logoutUser } from '../api/client';
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -54,12 +51,6 @@ const AdminPanel = () => {
     if (error.name === 'NotAuthorized') {
       navigate('/login');
     }
-  }
-
-  function checkUnauthorized(response) {
-    if (response.status === 401) {
-      navigate('/login');
-    };
   }
 
   useEffect(() => {
@@ -142,16 +133,11 @@ const AdminPanel = () => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${beURL}/logout`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        navigate('/login');
-      }
+      await logoutUser();
+      navigate('/login');
     } catch (error) {
       console.error('Ошибка выхода:', error);
+      navigate('/login');
     }
   };
 
@@ -178,37 +164,24 @@ const AdminPanel = () => {
 
     try {
       const updatePromises = selectedUsers.map(userId =>
-        fetch(`${beURL}/api/users/${userId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: newStatus }),
-          credentials: 'include',
-        }).then(response => {
-          checkUnauthorized(response);
-          return response;
-        })
+        updateUserStatus(userId, newStatus)
       );
 
-      const responses = await Promise.all(updatePromises);
-      const allOk = responses.every(res => res.ok);
+      await Promise.all(updatePromises);
 
-      if (allOk) {
-        setUsers(users.map(user =>
-          selectedUsers.includes(user.id)
-            ? { ...user, status: newStatus }
-            : user
-        ));
-        setSelectedUsers([]);
-        setSuccess(`${selectedUsers.length} user(s) ${actionText}`);
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError(`Failed to ${blockAction} some users`);
-        setTimeout(() => setError(null), 3000);
-      }
+      setUsers(users.map(user =>
+        selectedUsers.includes(user.id)
+          ? { ...user, status: newStatus }
+          : user
+      ));
+      setSelectedUsers([]);
+      setSuccess(`${selectedUsers.length} user(s) ${actionText}`);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Ошибка:', error);
+      if (error.name === 'NotAuthorized') {
+        navigate('/login');
+      }
       setError(`Error ${blockAction}ing users`);
       setTimeout(() => setError(null), 3000);
     } finally {
@@ -230,32 +203,23 @@ const AdminPanel = () => {
 
     try {
       const deletePromises = usersToDelete.map(userId =>
-        fetch(`${beURL}/api/users/${userId}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        }).then(response => {
-          checkUnauthorized(response);
-          return response;
-        })
+        deleteUser(userId)
       );
 
-      const responses = await Promise.all(deletePromises);
-      const allOk = responses.every(res => res.ok);
+      await Promise.all(deletePromises);
 
-      if (allOk) {
-        setUsers(users.filter(user => !usersToDelete.includes(user.id)));
-        setSelectedUsers([]);
-        setSuccess(usersToDelete.length === 1
-          ? 'User deleted successfully'
-          : `${usersToDelete.length} users deleted successfully`
-        );
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError('Failed to delete some users');
-        setTimeout(() => setError(null), 3000);
-      }
+      setUsers(users.filter(user => !usersToDelete.includes(user.id)));
+      setSelectedUsers([]);
+      setSuccess(usersToDelete.length === 1
+        ? 'User deleted successfully'
+        : `${usersToDelete.length} users deleted successfully`
+      );
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Ошибка удаления:', error);
+      if (error.name === 'NotAuthorized') {
+        navigate('/login');
+      }
       setError('Error deleting users');
       setTimeout(() => setError(null), 3000);
     } finally {
@@ -287,31 +251,22 @@ const AdminPanel = () => {
 
     try {
       const deletePromises = usersToEditDelete.map(user =>
-        fetch(`${beURL}/api/users/${user.id}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        }).then(response => {
-          checkUnauthorized(response);
-          return response;
-        })
+        deleteUser(user.id)
       );
 
-      const responses = await Promise.all(deletePromises);
-      const allOk = responses.every(res => res.ok);
+      await Promise.all(deletePromises);
 
-      if (allOk) {
-        setUsers(users.filter(user =>
-          user.status !== 'UNVERIFIED' && user.status !== 'BLOCKED_UNVERIFIED'
-        ));
-        setSelectedUsers([]);
-        setSuccess(`${usersToEditDelete.length} user(s) with UNVERIFIED/BLOCKED_UNVERIFIED status deleted successfully`);
-        setTimeout(() => setSuccess(null), 3000);
-      } else {
-        setError('Failed to delete some users');
-        setTimeout(() => setError(null), 3000);
-      }
+      setUsers(users.filter(user =>
+        user.status !== 'UNVERIFIED' && user.status !== 'BLOCKED_UNVERIFIED'
+      ));
+      setSelectedUsers([]);
+      setSuccess(`${usersToEditDelete.length} user(s) with UNVERIFIED/BLOCKED_UNVERIFIED status deleted successfully`);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Ошибка удаления:', error);
+      if (error.name === 'NotAuthorized') {
+        navigate('/login');
+      }
       setError('Error deleting users');
       setTimeout(() => setError(null), 3000);
     } finally {

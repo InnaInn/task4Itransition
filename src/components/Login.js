@@ -1,4 +1,4 @@
-import React, { useState } from  'react';
+import React, { useState } from 'react';
 import {
   Container,
   Row,
@@ -13,39 +13,29 @@ import logoImage from '../images/logo.png';
 import eyeImage from '../images/eye.png';
 import envelopeImage from '../images/envelope.png';
 import { Link, useNavigate } from 'react-router-dom';
-import { config } from "../config.js";
-
-const beURL = config.beURL;
+import { loginUser } from '../api/client';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
-      const response = await fetch(`${beURL}/api/users/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        navigate('/admin-panel');
-      } else {
-        setError('Please check your email or password');
-      }
+      await loginUser(email, password);
+      navigate('/admin-panel');
     } catch (error) {
       console.error('Ошибка:', error);
-      setError('Ошибка подключения к серверу');
+      setError('Please check your email or password');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,6 +81,7 @@ const Login = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="E-mail"
+                      disabled={loading}
                     />
                   </FloatingLabel>
                   <div
@@ -118,6 +109,7 @@ const Login = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password"
+                      disabled={loading}
                     />
                   </FloatingLabel>
                   <div
@@ -138,10 +130,11 @@ const Login = () => {
                   label="Remember me"
                   type="checkbox"
                   className="mb-3"
+                  disabled={loading}
                 />
 
-                <Button variant="primary" type="submit" className="w-100">
-                  Sign In
+                <Button variant="primary" type="submit" className="w-100" disabled={loading}>
+                  {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </Form>
             </div>
